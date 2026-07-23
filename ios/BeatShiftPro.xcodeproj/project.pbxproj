@@ -1,0 +1,389 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		36845561300DECE700B50A76 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 36845560300DECE700B50A76 /* GoogleMobileAds */; };
+		36E9088059B53B90381A2639 /* Views/BeatShiftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54107B9D033C6ABF1155E542 /* Views/BeatShiftStore.swift */; };
+		54F06D6EEBF4C08B308F48C0 /* Models/AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B51783A924C5523EA083B49 /* Models/AppModels.swift */; };
+		641EEF446337C7948F484CB8 /* Audio/MetronomeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C8B65CEFB729B9977FA72C2 /* Audio/MetronomeEngine.swift */; };
+		718544CD8D27E6AADD4DF24E /* Sounds in Resources */ = {isa = PBXBuildFile; fileRef = 13A2D6AD54FC5BFECA85363F /* Sounds */; };
+		7ADD2C4CF04A9F827AA9CCB7 /* Views/MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB53C29CAC51A6054A564F6 /* Views/MainView.swift */; };
+		8E94B1B10F8FD3C03A512D05 /* Views/ModalSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5DD90E4EE3364C197A5DCC4 /* Views/ModalSheet.swift */; };
+		9A0ED4231D352D324ADC8B62 /* Persistence/SetlistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91FDFA3411BC818DA241DCA7 /* Persistence/SetlistStore.swift */; };
+		9E8D368D2CA2CA2E9D34D4FB /* Views/ModePanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A94E2763590CFB57917C55B /* Views/ModePanels.swift */; };
+		9EAE55B157EDE6A583E6BD6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC4C40BD8D5C37E41BFA5FC5 /* Assets.xcassets */; };
+		A1ADBANNERSWIFT000000001 /* Views/AdBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1ADBANNERSWIFTREF00001 /* Views/AdBannerView.swift */; };
+		ACA5057CFE86D1A858703649 /* BeatShiftProApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC37B9E3FCAE28783DB8F63C /* BeatShiftProApp.swift */; };
+		B2STOREMANAGER0000000001 /* Store/StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2STOREMANAGERREF0000001 /* Store/StoreManager.swift */; };
+		C3APPREVIEWPROMPT00000001 /* Views/AppReviewPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3APPREVIEWPROMPTREF00001 /* Views/AppReviewPrompt.swift */; };
+		DE8AB5439B5627909E8FBFC5 /* Localization/L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F1CF60069067F02848D371 /* Localization/L10n.swift */; };
+		E6E7C34D12EEF2AA1D0FFDBF /* Audio/SampleLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1AB5AD164116C069708953 /* Audio/SampleLibrary.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0C8B65CEFB729B9977FA72C2 /* Audio/MetronomeEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio/MetronomeEngine.swift; sourceTree = "<group>"; };
+		11F04E1B1C7B349F2F4D1F9D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		13A2D6AD54FC5BFECA85363F /* Sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Sounds; sourceTree = "<group>"; };
+		19F1CF60069067F02848D371 /* Localization/L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization/L10n.swift; sourceTree = "<group>"; };
+		1B51783A924C5523EA083B49 /* Models/AppModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/AppModels.swift; sourceTree = "<group>"; };
+		54107B9D033C6ABF1155E542 /* Views/BeatShiftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/BeatShiftStore.swift; sourceTree = "<group>"; };
+		5AB53C29CAC51A6054A564F6 /* Views/MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/MainView.swift; sourceTree = "<group>"; };
+		91FDFA3411BC818DA241DCA7 /* Persistence/SetlistStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence/SetlistStore.swift; sourceTree = "<group>"; };
+		9A94E2763590CFB57917C55B /* Views/ModePanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ModePanels.swift; sourceTree = "<group>"; };
+		A1ADBANNERSWIFTREF00001 /* Views/AdBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/AdBannerView.swift; sourceTree = "<group>"; };
+		AC4C40BD8D5C37E41BFA5FC5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AD0849C342B12D7FC0210275 /* BeatShiftPro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BeatShiftPro.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2STOREKITCONFIGREF000001 /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.storekit; name = Products.storekit; path = ../Products.storekit; sourceTree = "<group>"; };
+		B2STOREMANAGERREF0000001 /* Store/StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store/StoreManager.swift; sourceTree = "<group>"; };
+		C3APPREVIEWPROMPTREF00001 /* Views/AppReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/AppReviewPrompt.swift; sourceTree = "<group>"; };
+		D5DD90E4EE3364C197A5DCC4 /* Views/ModalSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ModalSheet.swift; sourceTree = "<group>"; };
+		DE1AB5AD164116C069708953 /* Audio/SampleLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio/SampleLibrary.swift; sourceTree = "<group>"; };
+		EC37B9E3FCAE28783DB8F63C /* BeatShiftProApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatShiftProApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		56D9DEB7209CC2B39E593F03 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				36845561300DECE700B50A76 /* GoogleMobileAds in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		60D86AF7F62818E455EC2D46 /* BeatShiftPro */ = {
+			isa = PBXGroup;
+			children = (
+				EC37B9E3FCAE28783DB8F63C /* BeatShiftProApp.swift */,
+				1B51783A924C5523EA083B49 /* Models/AppModels.swift */,
+				19F1CF60069067F02848D371 /* Localization/L10n.swift */,
+				DE1AB5AD164116C069708953 /* Audio/SampleLibrary.swift */,
+				0C8B65CEFB729B9977FA72C2 /* Audio/MetronomeEngine.swift */,
+				91FDFA3411BC818DA241DCA7 /* Persistence/SetlistStore.swift */,
+				54107B9D033C6ABF1155E542 /* Views/BeatShiftStore.swift */,
+				5AB53C29CAC51A6054A564F6 /* Views/MainView.swift */,
+				9A94E2763590CFB57917C55B /* Views/ModePanels.swift */,
+				D5DD90E4EE3364C197A5DCC4 /* Views/ModalSheet.swift */,
+				A1ADBANNERSWIFTREF00001 /* Views/AdBannerView.swift */,
+				B2STOREMANAGERREF0000001 /* Store/StoreManager.swift */,
+				C3APPREVIEWPROMPTREF00001 /* Views/AppReviewPrompt.swift */,
+				B2STOREKITCONFIGREF000001 /* Products.storekit */,
+				AC4C40BD8D5C37E41BFA5FC5 /* Assets.xcassets */,
+				13A2D6AD54FC5BFECA85363F /* Sounds */,
+				11F04E1B1C7B349F2F4D1F9D /* Info.plist */,
+			);
+			path = BeatShiftPro;
+			sourceTree = "<group>";
+		};
+		88932FD6DD0EDC80FBF1C921 = {
+			isa = PBXGroup;
+			children = (
+				60D86AF7F62818E455EC2D46 /* BeatShiftPro */,
+				D71BD8A0B6A6AA54EDBA6454 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D71BD8A0B6A6AA54EDBA6454 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AD0849C342B12D7FC0210275 /* BeatShiftPro.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		730950AD798A77AD508AA9E2 /* BeatShiftPro */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF05E221BD9EA3BB4DBD6B89 /* Build configuration list for PBXNativeTarget "BeatShiftPro" */;
+			buildPhases = (
+				678DFDA984997D39267CB7FC /* Sources */,
+				56D9DEB7209CC2B39E593F03 /* Frameworks */,
+				85132AF6B5F14319CB4C91EC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BeatShiftPro;
+			productName = BeatShiftPro;
+			productReference = AD0849C342B12D7FC0210275 /* BeatShiftPro.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1781F676DEDF5767F3243DB0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					730950AD798A77AD508AA9E2 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+				};
+			};
+			buildConfigurationList = 458B4083FB4863EBA58A3DBE /* Build configuration list for PBXProject "BeatShiftPro" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				ja,
+			);
+			mainGroup = 88932FD6DD0EDC80FBF1C921;
+			packageReferences = (
+				3684555F300DECE700B50A76 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
+			productRefGroup = D71BD8A0B6A6AA54EDBA6454 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				730950AD798A77AD508AA9E2 /* BeatShiftPro */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		85132AF6B5F14319CB4C91EC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9EAE55B157EDE6A583E6BD6A /* Assets.xcassets in Resources */,
+				718544CD8D27E6AADD4DF24E /* Sounds in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		678DFDA984997D39267CB7FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACA5057CFE86D1A858703649 /* BeatShiftProApp.swift in Sources */,
+				54F06D6EEBF4C08B308F48C0 /* Models/AppModels.swift in Sources */,
+				DE8AB5439B5627909E8FBFC5 /* Localization/L10n.swift in Sources */,
+				E6E7C34D12EEF2AA1D0FFDBF /* Audio/SampleLibrary.swift in Sources */,
+				641EEF446337C7948F484CB8 /* Audio/MetronomeEngine.swift in Sources */,
+				9A0ED4231D352D324ADC8B62 /* Persistence/SetlistStore.swift in Sources */,
+				36E9088059B53B90381A2639 /* Views/BeatShiftStore.swift in Sources */,
+				7ADD2C4CF04A9F827AA9CCB7 /* Views/MainView.swift in Sources */,
+				9E8D368D2CA2CA2E9D34D4FB /* Views/ModePanels.swift in Sources */,
+				8E94B1B10F8FD3C03A512D05 /* Views/ModalSheet.swift in Sources */,
+				A1ADBANNERSWIFT000000001 /* Views/AdBannerView.swift in Sources */,
+				B2STOREMANAGER0000000001 /* Store/StoreManager.swift in Sources */,
+				C3APPREVIEWPROMPT00000001 /* Views/AppReviewPrompt.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1EEF377D1515B41718031CAC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = X44BUP7ZKQ;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		43E0B563508608DABE5FBCC7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = X44BUP7ZKQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BeatShiftPro/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "BeatShift Pro";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beatshift.pro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		49CA6581C85126C6DC37F784 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = X44BUP7ZKQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BeatShiftPro/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "BeatShift Pro";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.beatshift.pro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EE459825F37DFF8E5B80EC00 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = X44BUP7ZKQ;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		458B4083FB4863EBA58A3DBE /* Build configuration list for PBXProject "BeatShiftPro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE459825F37DFF8E5B80EC00 /* Debug */,
+				1EEF377D1515B41718031CAC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BF05E221BD9EA3BB4DBD6B89 /* Build configuration list for PBXNativeTarget "BeatShiftPro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				43E0B563508608DABE5FBCC7 /* Debug */,
+				49CA6581C85126C6DC37F784 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3684555F300DECE700B50A76 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		36845560300DECE700B50A76 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3684555F300DECE700B50A76 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 1781F676DEDF5767F3243DB0 /* Project object */;
+}
