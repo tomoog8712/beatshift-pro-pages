@@ -11,7 +11,7 @@ final class BeatShiftStore: ObservableObject {
     @Published var lang: AppLang = .detect()
     @Published var mode: AppMode = .normal
     @Published var bpm: Int = 120
-    @Published var soundType: SoundType = .click
+    @Published var soundType: SoundType = .voice
     @Published var isRunning = false
     @Published var heroLabel = "Tempo"
 
@@ -53,7 +53,7 @@ final class BeatShiftStore: ObservableObject {
     @Published var oddSignatureKey = "7/8"
     @Published var oddNumerator = 7
     @Published var oddDenominator = 8
-    @Published var oddPatterns: [Int] = [1, 0, 0, 1, 0, 0, 0]
+    @Published var oddPatterns: [Int] = [1, 0, 0, 0, 0, 0, 0]
     @Published var oddVol = 1.0
 
     @Published var modMatrixIndex = 2
@@ -68,11 +68,11 @@ final class BeatShiftStore: ObservableObject {
     @Published var saveNameDraft = ""
 
     private var modeSettings: [AppMode: ModeSettings] = [
-        .normal: ModeSettings(bpm: 120, soundType: .click),
-        .changeUp: ModeSettings(bpm: 120, soundType: .click),
-        .speed: ModeSettings(bpm: 20, soundType: .click),
-        .oddTime: ModeSettings(bpm: 120, soundType: .click),
-        .modulation: ModeSettings(bpm: 120, soundType: .click)
+        .normal: ModeSettings(bpm: 120, soundType: .voice),
+        .changeUp: ModeSettings(bpm: 120, soundType: .voice),
+        .speed: ModeSettings(bpm: 20, soundType: .voice),
+        .oddTime: ModeSettings(bpm: 120, soundType: .voice),
+        .modulation: ModeSettings(bpm: 120, soundType: .voice)
     ]
 
     private var lastTap: Date?
@@ -88,7 +88,7 @@ final class BeatShiftStore: ObservableObject {
     var l10n: L10nStrings { L10n.strings(for: lang) }
 
     enum ModalKind: Identifiable, Equatable {
-        case sound, bars, setlist, savePrompt, settings
+        case sound, bars, setlist, savePrompt
         case speedBpm(Bool) // true = start
         case speedPace(Bool) // true = sec
         case speedRhythm
@@ -101,7 +101,6 @@ final class BeatShiftStore: ObservableObject {
             case .bars: return "bars"
             case .setlist: return "setlist"
             case .savePrompt: return "save"
-            case .settings: return "settings"
             case .speedBpm(let s): return s ? "spdStart" : "spdEnd"
             case .speedPace(let s): return s ? "spdSec" : "spdBpm"
             case .speedRhythm: return "spdRhythm"
@@ -216,7 +215,8 @@ final class BeatShiftStore: ObservableObject {
         case .changeUp, .speed:
             totalBeatsInBar = 4
         case .oddTime:
-            break
+            // 変拍子のデフォルトはスウィングなし（16分も均等）
+            swingMode = .off
         case .modulation:
             applyModSwingConstraints()
         }

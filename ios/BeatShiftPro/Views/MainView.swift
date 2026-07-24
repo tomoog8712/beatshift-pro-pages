@@ -38,9 +38,7 @@ extension Color {
 
 struct MainView: View {
     @StateObject private var store = BeatShiftStore()
-    @StateObject private var storeManager = StoreManager()
     @StateObject private var reviewPrompt = AppReviewPromptController()
-    @AppStorage(StoreManager.adRemovedDefaultsKey) private var isAdRemoved = false
     @Environment(\.requestReview) private var requestReview
 
     var body: some View {
@@ -62,23 +60,22 @@ struct MainView: View {
             )
             .ignoresSafeArea()
 
-            // 上部コンテンツはスクロール可能。未購入時のみ最下部に広告バナー（Safe Area 内）。
             VStack(spacing: 0) {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 10) {
                         topBar
                         tabs
                         hero
-                        if store.mode == .normal || store.mode == .modulation {
+                        if store.mode == .normal || store.mode == .modulation || store.mode == .oddTime {
                             swingSlider
                         }
                         controls
                         modePanel
-                            .frame(minHeight: adsRemoved ? 280 : 220)
+                            .frame(minHeight: 320)
                     }
                     .padding(.horizontal, 14)
-                    .padding(.top, 6)
-                    .padding(.bottom, 4)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                     .frame(maxWidth: 430)
                     .frame(maxWidth: .infinity)
                 }
@@ -93,35 +90,15 @@ struct MainView: View {
                             reviewPrompt.dismissPermanently()
                         }
                     )
-                    .padding(.bottom, 8)
-                }
-
-                if !adsRemoved {
-                    // フェーダー誤タップ防止の余白
-                    Color.clear
-                        .frame(height: 10)
-
-                    AdBannerView()
-                        .frame(height: AdMobConfig.bannerHeight)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 10)
                 }
             }
         }
-        // ホームインジケータ等の Safe Area は維持（広告がホームバーに被らない）
         .preferredColorScheme(.dark)
         .animation(.easeOut(duration: 0.28), value: reviewPrompt.isBannerVisible)
         .sheet(item: $store.modal) { kind in
-            ModalSheet(kind: kind, store: store, storeManager: storeManager)
-        }
-        .alert("BeatShift Pro", isPresented: Binding(
-            get: { storeManager.alertMessage != nil },
-            set: { if !$0 { storeManager.alertMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { storeManager.alertMessage = nil }
-        } message: {
-            Text(storeManager.alertMessage ?? "")
-        }
-        .onChange(of: storeManager.isAdRemoved) { removed in
-            isAdRemoved = removed
+            ModalSheet(kind: kind, store: store)
         }
         .onReceive(NotificationCenter.default.publisher(for: .beatshiftWillBackground)) { _ in
             store.handleBackground()
@@ -135,11 +112,6 @@ struct MainView: View {
                 store.syncEngineConfig()
             }
         }
-    }
-
-    /// StoreManager と @AppStorage の両方を見て広告表示を決める
-    private var adsRemoved: Bool {
-        storeManager.isAdRemoved || isAdRemoved
     }
 
     private var topBar: some View {
@@ -158,18 +130,6 @@ struct MainView: View {
                     .frame(minWidth: 90, alignment: .leading)
                 Spacer()
                 Button {
-                    store.modal = .settings
-                } label: {
-                    Text("⚙️")
-                        .font(.system(size: 13, weight: .semibold))
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 3)
-                        .background(Theme.surface)
-                        .overlay(Capsule().stroke(Theme.border, lineWidth: 1))
-                        .clipShape(Capsule())
-                }
-                .accessibilityLabel("設定")
-                Button {
                     store.modal = .setlist
                 } label: {
                     Text("💾")
@@ -180,9 +140,10 @@ struct MainView: View {
                         .overlay(Capsule().stroke(Theme.border, lineWidth: 1))
                         .clipShape(Capsule())
                 }
+                .accessibilityLabel("再生リスト")
             }
         }
-        .frame(height: 28)
+        .frame(height: 30)
     }
 
     private var tabs: some View {
@@ -229,7 +190,7 @@ struct MainView: View {
             }
             Group {
                 if store.mode == .oddTime {
-                    FlexibleOddDots(store: store)
+                    oddHero
                 } else {
                     normalHero
                 }
@@ -240,11 +201,27 @@ struct MainView: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .frame(minHeight: 118)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+        .frame(minHeight: store.mode == .oddTime ? 158 : 126)
         .background(HardwarePanelBackground())
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMD))
+    }
+
+    private var oddHero: some View {
+        VStack(spacing: 8) {
+            Text("\(store.bpm)")
+                .font(.system(size: 52, weight: .bold))
+                .tracking(-1.5)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.white, Color.white.opacity(0.72)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            FlexibleOddDots(store: store)
+        }
     }
 
     private var beatRing: some View {
@@ -422,7 +399,7 @@ struct MainView: View {
                         .frame(maxWidth: .infinity)
                         .frame(maxHeight: .infinity)
                 }
-                if store.mode == .normal || store.mode == .modulation {
+                if store.mode == .normal || store.mode == .modulation || store.mode == .oddTime {
                     controlBtn(store.swingButtonTitle, color: store.swingMode == .off ? Theme.textSecondary : Theme.plus) {
                         store.toggleSwing()
                     }
@@ -434,7 +411,7 @@ struct MainView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 150)
+            .frame(height: 158)
 
             TempoDialView(store: store)
         }

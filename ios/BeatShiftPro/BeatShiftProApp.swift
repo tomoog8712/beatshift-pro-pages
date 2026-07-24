@@ -3,15 +3,6 @@ import AVFoundation
 import MediaPlayer
 import UIKit
 
-/*
- Google Mobile Ads SPM 追加後、以下の import と start() が有効になります。
- File → Add Package Dependencies…
- → https://github.com/googleads/swift-package-manager-google-mobile-ads
- */
-#if canImport(GoogleMobileAds)
-import GoogleMobileAds
-#endif
-
 extension Notification.Name {
     static let beatshiftWillBackground = Notification.Name("beatshiftWillBackground")
     static let beatshiftDidForeground = Notification.Name("beatshiftDidForeground")
@@ -35,7 +26,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         Self.configureAudioSession()
-        Self.startAdMobIfAvailable()
         NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance(),
@@ -61,15 +51,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             NotificationCenter.default.post(name: .beatshiftDidForeground, object: nil)
         }
         return true
-    }
-
-    private static func startAdMobIfAvailable() {
-        #if canImport(GoogleMobileAds)
-        // SDK 初期化完了後にバナー読み込みが安定する
-        MobileAds.shared.start { status in
-            NSLog("BeatShiftPro AdMob: SDK started — \(status.adapterStatusesByClassName.count) adapters")
-        }
-        #endif
     }
 
     static func configureAudioSession() {

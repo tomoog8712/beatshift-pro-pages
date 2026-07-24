@@ -80,6 +80,30 @@ struct MetalFaderKnob: View {
 
 // MARK: - Tempo dial (BOSS DB-90 style)
 
+/// ダイヤル用のドーナツ形ヒット領域（中央の START は除外）
+private struct DialAnnulusHitShape: Shape {
+    var innerRadius: CGFloat
+    var outerRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        var path = Path()
+        path.addEllipse(in: CGRect(
+            x: c.x - outerRadius,
+            y: c.y - outerRadius,
+            width: outerRadius * 2,
+            height: outerRadius * 2
+        ))
+        path.addEllipse(in: CGRect(
+            x: c.x - innerRadius,
+            y: c.y - innerRadius,
+            width: innerRadius * 2,
+            height: innerRadius * 2
+        ))
+        return path
+    }
+}
+
 struct TempoDialView: View {
     @ObservedObject var store: BeatShiftStore
     @State private var lastAngle: Double?
@@ -88,6 +112,14 @@ struct TempoDialView: View {
     private let size: CGFloat = 150
     private let faceInset: CGFloat = 5
     private let centerSize: CGFloat = 90
+    /// 黄色いノブのタッチをわずかに外側へ拡張
+    private let dialHitPadding: CGFloat = 10
+    /// START 緑円との間に少し隙間を空けて誤タップを防ぐ
+    private let dialInnerGap: CGFloat = 4
+
+    private var dialOuterRadius: CGFloat { size / 2 + dialHitPadding }
+    private var dialInnerRadius: CGFloat { centerSize / 2 + dialInnerGap }
+    private var hitFrame: CGFloat { size + dialHitPadding * 2 }
 
     var body: some View {
         ZStack {
@@ -115,6 +147,7 @@ struct TempoDialView: View {
             .frame(width: size, height: size)
             .clipShape(Circle())
             .shadow(color: .black.opacity(0.45), radius: 7, y: 5)
+            .allowsHitTesting(false)
 
             // Orange face — flat solid (no gradient)
             Circle()
@@ -122,6 +155,7 @@ struct TempoDialView: View {
                 .frame(width: size - faceInset * 2, height: size - faceInset * 2)
                 .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                 .rotationEffect(.degrees(rotation))
+                .allowsHitTesting(false)
 
             // Tick marks around face (dark orange radial lines)
             ForEach(0..<12, id: \.self) { i in
@@ -148,7 +182,6 @@ struct TempoDialView: View {
                             endRadius: 9
                         )
                     )
-                // Inset shadow simulation
                 Circle()
                     .stroke(
                         LinearGradient(
@@ -171,7 +204,17 @@ struct TempoDialView: View {
                 .shadow(color: .black.opacity(0.35), radius: 5)
                 .allowsHitTesting(false)
 
-            // Center START / STOP — deep green (HTML exact)
+            // 黄色いノブのタッチ領域（ドーナツ：中央の緑 START は含めない／外側は少し拡張）
+            DialAnnulusHitShape(innerRadius: dialInnerRadius, outerRadius: dialOuterRadius)
+                .fill(Color.clear)
+                .frame(width: hitFrame, height: hitFrame)
+                .contentShape(
+                    DialAnnulusHitShape(innerRadius: dialInnerRadius, outerRadius: dialOuterRadius),
+                    eoFill: true
+                )
+                .gesture(dialDragGesture)
+
+            // Center START / STOP — 緑の縁の内側だけ反応
             Button {
                 store.togglePlay()
             } label: {
@@ -226,32 +269,46 @@ struct TempoDialView: View {
                         )
                 }
                 .frame(width: centerSize, height: centerSize)
+                .clipShape(Circle())
+                .contentShape(Circle())
                 .shadow(
                     color: store.isRunning ? Color(hex: 0x2ECC71).opacity(0.75) : .clear,
                     radius: store.isRunning ? 14 : 0
                 )
             }
             .buttonStyle(.plain)
+            .frame(width: centerSize, height: centerSize)
+            .contentShape(Circle())
         }
-        .frame(width: size, height: size)
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    let center = CGPoint(x: size / 2, y: size / 2)
-                    let angle = atan2(value.location.y - center.y, value.location.x - center.x) * 180 / .pi
-                    if let last = lastAngle {
-                        var delta = angle - last
-                        if delta > 180 { delta -= 360 }
-                        if delta < -180 { delta += 360 }
-                        rotation += delta
-                        store.applyDialDelta(degrees: delta)
-                    } else {
-                        store.prepareDialHaptic()
-                    }
-                    lastAngle = angle
+        .frame(width: hitFrame, height: hitFrame)
+    }
+
+    private var dialDragGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let center = CGPoint(x: hitFrame / 2, y: hitFrame / 2)
+                let dx = value.location.x - center.x
+                let dy = value.location.y - center.y
+                let dist = sqrt(dx * dx + dy * dy)
+                // 緑の START 円内・外側のタッチはダイヤル操作しない
+                guard dist >= dialInnerRadius, dist <= dialOuterRadius else {
+                    lastAngle = nil
+                    return
                 }
-                .onEnded { _ in lastAngle = nil }
-        )
+
+                let angle = atan2(dy, dx) * 180 / .pi
+                if let last = lastAngle {
+                    var delta = angle - last
+                    if delta > 180 { delta -= 360 }
+                    if delta < -180 { delta += 360 }
+                    rotation += delta
+                    store.applyDialDelta(degrees: delta)
+                } else {
+                    store.prepareDialHaptic()
+                }
+                lastAngle = angle
+            }
+            .onEnded { _ in lastAngle = nil }
     }
 }
 
@@ -399,7 +456,7 @@ struct NormalMixerPanel: View {
                         }
                 )
             }
-            .frame(height: 120)
+            .frame(height: 148)
 
             icon()
                 .frame(maxWidth: .infinity)
@@ -506,22 +563,28 @@ struct SpeedPanel: View {
 
 struct OddTimePanel: View {
     @ObservedObject var store: BeatShiftStore
+
     var body: some View {
-        Button {
-            store.modal = .oddSig
-        } label: {
-            Text("\(store.l10n.lblOddSigSetting)\(store.oddSignatureKey) ⚙️")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.text)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Theme.surfaceRaised)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+        VStack(spacing: 8) {
+            Button {
+                store.modal = .oddSig
+            } label: {
+                Text("\(store.l10n.lblOddSigSetting)\(store.oddSignatureKey) ⚙️")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Theme.text)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Theme.surfaceRaised)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+
+            // SEQ と同じ AC / 4分 / 8分 / 16分 / 3連 フェーダー
+            NormalMixerPanel(store: store)
         }
-        .padding(8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(HardwarePanelBackground())
     }
 }
 

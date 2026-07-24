@@ -3,7 +3,6 @@ import SwiftUI
 struct ModalSheet: View {
     let kind: BeatShiftStore.ModalKind
     @ObservedObject var store: BeatShiftStore
-    @ObservedObject var storeManager: StoreManager
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -120,8 +119,6 @@ struct ModalSheet: View {
                         }
                         store.modal = .setlist
                     }
-                case .settings:
-                    removeAdsSettingsSection
                 }
             }
             .navigationTitle(title)
@@ -132,53 +129,8 @@ struct ModalSheet: View {
                 }
             }
         }
-        .presentationDetents(kind == .settings ? [.medium] : [.medium, .large])
+        .presentationDetents([.medium, .large])
         .preferredColorScheme(.dark)
-    }
-
-    @ViewBuilder
-    private var removeAdsSettingsSection: some View {
-        Section {
-            if storeManager.isAdRemoved {
-                Text("バナー広告は非表示です。")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.textSecondary)
-            } else {
-                Button {
-                    Task { await storeManager.purchaseRemoveAds() }
-                } label: {
-                    HStack {
-                        Text(storeManager.purchaseButtonTitle)
-                            .font(.system(size: 16, weight: .semibold))
-                        Spacer()
-                        if storeManager.isPurchasing {
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(storeManager.isPurchasing)
-
-                Button {
-                    Task { await storeManager.restorePurchases() }
-                } label: {
-                    HStack {
-                        Text("購入を復元（Restore）")
-                        Spacer()
-                        if storeManager.isRestoring {
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(storeManager.isRestoring)
-            }
-        } header: {
-            Text("広告")
-        } footer: {
-            if !storeManager.isAdRemoved {
-                Text("買い切り（一度の購入で広告を永久に非表示）。プロダクト ID: \(StoreManager.removeAdsProductID)")
-                    .font(.system(size: 11))
-            }
-        }
     }
 
     private var title: String {
@@ -187,7 +139,6 @@ struct ModalSheet: View {
         case .bars: return store.l10n.modalBars
         case .setlist: return "再生リスト (Saved List)"
         case .savePrompt: return store.l10n.modalPrompt
-        case .settings: return "設定"
         case .speedBpm(let s): return s ? store.l10n.spdStart : store.l10n.spdEnd
         case .speedPace(let s): return s ? store.l10n.spdSec : store.l10n.spdVal
         case .speedRhythm: return store.l10n.spdRhythmTitle

@@ -18,7 +18,7 @@ protocol MetronomeEngineDelegate: AnyObject {
 struct MetronomeConfig {
     var mode: AppMode = .normal
     var bpm: Int = 120
-    var soundType: SoundType = .click
+    var soundType: SoundType = .voice
     var swingMode: SwingMode = .off
     var swingRatio: Double = 0.666
     var totalBeatsInBar: Int = 4
@@ -46,7 +46,7 @@ struct MetronomeConfig {
 
     var oddNumerator: Int = 7
     var oddDenominator: Int = 8
-    var oddPatterns: [Int] = [1, 0, 0, 1, 0, 0, 0]
+    var oddPatterns: [Int] = [1, 0, 0, 0, 0, 0, 0]
     var oddVol: Double = 1.0
 
     var modMatrixIndex: Int = 2
@@ -61,8 +61,15 @@ final class MetronomeEngine {
     weak var delegate: MetronomeEngineDelegate?
 
     private let engine = AVAudioEngine()
-    private let players: [AVAudioPlayerNode] = (0..<8).map { _ in AVAudioPlayerNode() }
+    /// 小節ごとにバンクをローテ。「1」では前バンクだけ止める（先読み済みの次拍は消さない）
+    private let playerBanks: [[AVAudioPlayerNode]] = (0..<8).map { _ in
+        (0..<4).map { _ in AVAudioPlayerNode() }
+    }
+    private var activeBankIndex = 0
     private var playerCursor = 0
+    private var bankCutGeneration: [UInt64] = Array(repeating: 0, count: 8)
+    private var bankHasPendingCut: [Bool] = Array(repeating: false, count: 8)
+    private var barOneCutSerial: UInt64 = 0
     private var samples: SampleLibrary!
     private var playerFormat: AVAudioFormat!
     private var timer: DispatchSourceTimer?
@@ -127,9 +134,11 @@ final class MetronomeEngine {
             return AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)!
         }()
         playerFormat = useFormat
-        for p in players {
-            engine.attach(p)
-            engine.connect(p, to: main, format: useFormat)
+        for bank in playerBanks {
+            for p in bank {
+                engine.attach(p)
+                engine.connect(p, to: main, format: useFormat)
+            }
         }
         samples = SampleLibrary(format: useFormat)
         do {
@@ -137,7 +146,9 @@ final class MetronomeEngine {
         } catch {
             NSLog("BeatShiftPro: engine start failed: \(error)")
         }
-        for p in players { p.play() }
+        for bank in playerBanks {
+            for p in bank { p.play() }
+        }
         resetTimelineAnchor()
     }
 
@@ -150,7 +161,9 @@ final class MetronomeEngine {
         if !engine.isRunning {
             do { try engine.start() } catch { NSLog("BeatShiftPro: engine restart failed: \(error)") }
         }
-        for p in players where !p.isPlaying { p.play() }
+        for bank in playerBanks {
+            for p in bank where !p.isPlaying { p.play() }
+        }
     }
 
     func setBackgroundScheduling(_ background: Bool) {
@@ -187,6 +200,10 @@ final class MetronomeEngine {
             case .oddTime:
                 self.oddCurrentStep = 0
                 self.oddVoiceCounter = 0
+                self.activeBankIndex = 0
+                self.playerCursor = 0
+                self.bankHasPendingCut = Array(repeating: false, count: self.playerBanks.count)
+                self.barOneCutSerial &+= 1
             case .speed:
                 self.currentBeatInBar = 0
                 self.currentStepInBeat = 0
@@ -203,7 +220,10 @@ final class MetronomeEngine {
                     self.delegate?.metronomeDidUpdateHeroLabel(jp ? "⏱️ カウントイン" : "Count In")
                 }
             case .normal:
-                break
+                self.activeBankIndex = 0
+                self.playerCursor = 0
+                self.bankHasPendingCut = Array(repeating: false, count: self.playerBanks.count)
+                self.barOneCutSerial &+= 1
             }
 
             self.startTimer()
@@ -219,9 +239,12 @@ final class MetronomeEngine {
             self.timer = nil
             self.cuCountInBar = 0
             self.spdCountInState = 0
-            for p in self.players {
-                p.stop()
-                p.play()
+            self.barOneCutSerial &+= 1
+            for bank in self.playerBanks {
+                for p in bank {
+                    p.stop()
+                    p.play()
+                }
             }
             self.resetTimelineAnchor()
             DispatchQueue.main.async {
@@ -245,9 +268,42 @@ final class MetronomeEngine {
     }
 
     private func nextPlayer() -> AVAudioPlayerNode {
-        let p = players[playerCursor % players.count]
+        let bank = playerBanks[activeBankIndex]
+        let p = bank[playerCursor % bank.count]
         playerCursor += 1
         return p
+    }
+
+    /// 次の「1」で直前小節のバンクだけ止める。新小節は別バンクへ先読みするので消えない。
+    private func cutPreviousBarAtOne(at beatStart: TimeInterval) {
+        let oldIndex = activeBankIndex
+        let oldBank = playerBanks[oldIndex]
+        bankHasPendingCut[oldIndex] = true
+
+        // まだカット待ちのバンクは使わない（先読みで上書きしない）
+        var next = (oldIndex + 1) % playerBanks.count
+        for _ in 0..<playerBanks.count {
+            if !bankHasPendingCut[next] { break }
+            next = (next + 1) % playerBanks.count
+        }
+        activeBankIndex = next
+        playerCursor = 0
+
+        bankCutGeneration[oldIndex] &+= 1
+        let gen = bankCutGeneration[oldIndex]
+        barOneCutSerial &+= 1
+        let serial = barOneCutSerial
+        let delay = max(0, beatStart - audioNow())
+        queue.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self else { return }
+            guard self.isRunning, self.barOneCutSerial >= serial else { return }
+            guard self.bankCutGeneration[oldIndex] == gen else { return }
+            for p in oldBank {
+                p.stop()
+                p.play()
+            }
+            self.bankHasPendingCut[oldIndex] = false
+        }
     }
 
     private func scheduler() {
@@ -295,6 +351,7 @@ final class MetronomeEngine {
         let startFrame = AVAudioFrameCount(max(0, startOffset * sr))
         guard startFrame < buffer.frameLength else { return nil }
         let frames = buffer.frameLength - startFrame
+        guard frames > 0 else { return nil }
         guard let out = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: frames) else { return nil }
         out.frameLength = frames
         let channels = Int(buffer.format.channelCount)
@@ -441,28 +498,38 @@ final class MetronomeEngine {
 
     private func scheduleNormal(beatInterval: Double) {
         let beatLen = beatInterval
-        let isFirstBeat = currentBeatInBar == 0
+        let beatStart = nextEventTime
+        let beat = currentBeatInBar
+        flashBeat(beat, at: beatStart)
+
+        if beat == 0 {
+            cutPreviousBarAtOne(at: beatStart)
+        }
+        emitNormalBeatContent(beatStart: beatStart, beatLen: beatLen, beat: beat)
+
+        nextEventTime += beatLen
+        currentBeatInBar = (currentBeatInBar + 1) % config.totalBeatsInBar
+    }
+
+    private func emitNormalBeatContent(beatStart: TimeInterval, beatLen: Double, beat: Int) {
+        let isFirstBeat = beat == 0
         let isVoice = config.soundType == .voice
-        let copyBeat = currentBeatInBar
-        flashBeat(copyBeat, at: nextEventTime)
 
         if isFirstBeat && config.accentVol > 0.01 {
-            playTargetSound(type: .woodblock, time: nextEventTime, beatIndex: 0, vol: config.accentVol * 1.2)
+            playTargetSound(type: .woodblock, time: beatStart, beatIndex: 0, vol: config.accentVol * 1.2)
         }
 
         if config.quarterVol > 0.01 {
             if isVoice {
-                triggerVoiceBeatNumber(time: nextEventTime, beatIndex: currentBeatInBar, vol: config.quarterVol)
-                // Same click underlay on every beat; accent is a separate fader.
-                trigger(.woodWeak, at: nextEventTime, volume: config.quarterVol * 0.7)
+                triggerVoiceBeatNumber(time: beatStart, beatIndex: beat, vol: config.quarterVol)
+                trigger(.woodWeak, at: beatStart, volume: config.quarterVol * 0.7)
             } else {
-                // Always use non-accent sample (same as beat 2+); accent fader handles beat 1.
-                playTargetSound(type: config.soundType, time: nextEventTime, beatIndex: 1, vol: config.quarterVol)
+                playTargetSound(type: config.soundType, time: beatStart, beatIndex: 1, vol: config.quarterVol)
             }
         }
 
         if config.eighthVol > 0.01 {
-            let eighthTime = nextEventTime + getSwingSubbeatOffset(beatLen: beatLen, gridPos: 0.5)
+            let eighthTime = beatStart + getSwingSubbeatOffset(beatLen: beatLen, gridPos: 0.5)
             if isVoice {
                 triggerVoiceKey(time: eighthTime, key: .voiceAnd, vol: config.eighthVol)
                 trigger(.woodWeak, at: eighthTime, volume: config.eighthVol * 0.5)
@@ -472,8 +539,8 @@ final class MetronomeEngine {
         }
 
         if config.sixteenthVol > 0.01 {
-            let t1 = nextEventTime + getSwingSubbeatOffset(beatLen: beatLen, gridPos: 0.25)
-            let t2 = nextEventTime + getSwingSubbeatOffset(beatLen: beatLen, gridPos: 0.75)
+            let t1 = beatStart + getSwingSubbeatOffset(beatLen: beatLen, gridPos: 0.25)
+            let t2 = beatStart + getSwingSubbeatOffset(beatLen: beatLen, gridPos: 0.75)
             if isVoice {
                 triggerVoiceKey(time: t1, key: .voiceE, vol: config.sixteenthVol * 0.9)
                 triggerVoiceKey(time: t2, key: .voiceDa, vol: config.sixteenthVol * 0.9)
@@ -486,8 +553,8 @@ final class MetronomeEngine {
         }
 
         if config.tripletVol > 0.01 {
-            let t1 = nextEventTime + beatLen * (1.0 / 3.0)
-            let t2 = nextEventTime + beatLen * (2.0 / 3.0)
+            let t1 = beatStart + beatLen * (1.0 / 3.0)
+            let t2 = beatStart + beatLen * (2.0 / 3.0)
             if isVoice {
                 triggerVoiceKey(time: t1, key: .voiceE, vol: config.tripletVol * 0.9)
                 triggerVoiceKey(time: t2, key: .voiceDa, vol: config.tripletVol * 0.9)
@@ -498,9 +565,6 @@ final class MetronomeEngine {
                 trigger(.woodWeak, at: t2, volume: config.tripletVol * 0.8)
             }
         }
-
-        nextEventTime += beatLen
-        currentBeatInBar = (currentBeatInBar + 1) % config.totalBeatsInBar
     }
 
     private func generateCuTimeline(type: String, duration: Double) -> [(t: Double, s: String)] {
@@ -766,34 +830,265 @@ final class MetronomeEngine {
     private func scheduleOddTime(beatInterval: Double) {
         let stepFactor = 4.0 / Double(config.oddDenominator)
         let stepInterval = beatInterval * stepFactor
-        let copyStep = oddCurrentStep
-        flashOdd(copyStep, at: nextEventTime)
 
-        let isAccent = (config.oddPatterns[safe: oddCurrentStep] ?? 0) != 0
-        if oddCurrentStep == 0 || isAccent {
+        // 7/8・9/8: 分母8＝各ステップが8分音符。詰め込まず1つずつ進める
+        if config.oddDenominator == 8 {
+            scheduleOddEighthPulse(stepInterval: stepInterval)
+            return
+        }
+
+        scheduleOddSimpleStep(stepInterval: stepInterval)
+    }
+
+    /// 7/8・9/8（8分パルス）
+    /// - 偶数ステップ: 番号（4分）。後ろに8分が続くときだけ、その2つの8分＝1つの4分に対して
+    ///   en / e / da を通常の4分テンポで置く（短くしない・早くしない）
+    /// - 最後の単独番号（7/8の4、9/8の5）: 番号だけ。en も細分も置かない
+    /// - 音は最後まで再生。次の「1」の瞬間だけ前小節の鳴り残しを切る
+    private func scheduleOddEighthPulse(stepInterval: Double) {
+        let step = oddCurrentStep
+        let beatStart = nextEventTime
+        let isNumberStep = step % 2 == 0
+        let hasFollowingEighth = isNumberStep && (step + 1 < config.oddNumerator)
+        let quarterLen = stepInterval * 2.0
+
+        if isNumberStep && step == 0 {
             oddVoiceCounter = 0
+            flashOdd(0, at: beatStart)
+            cutPreviousBarAtOne(at: beatStart)
+            emitOddEighthNumberContent(
+                step: 0,
+                beatStart: beatStart,
+                quarterLen: quarterLen,
+                hasFollowingEighth: hasFollowingEighth
+            )
+            if hasFollowingEighth {
+                nextEventTime = beatStart + quarterLen
+                oddCurrentStep = (step + 2) % config.oddNumerator
+                oddVoiceCounter = 2
+            } else {
+                nextEventTime = beatStart + stepInterval
+                oddCurrentStep = (step + 1) % config.oddNumerator
+                oddVoiceCounter = 1
+            }
+            return
         }
 
-        if config.soundType == .voice {
-            if oddVoiceCounter < config.oddNumerator {
-                if let key = SampleKey.voice(oddVoiceCounter + 1) {
-                    trigger(key, at: nextEventTime, volume: config.oddVol * 1.5)
-                }
-            }
-            trigger(isAccent ? .clickAccent : .clickStrong, at: nextEventTime, volume: isAccent ? config.oddVol * 1.2 : config.oddVol * 0.6)
-        } else {
-            if oddCurrentStep == 0 {
-                trigger(.woodAccent, at: nextEventTime, volume: config.oddVol * 1.3)
-            } else if isAccent {
-                playTargetSound(type: config.soundType, time: nextEventTime, beatIndex: oddCurrentStep, vol: config.oddVol * 1.2)
+        flashOdd(step, at: beatStart)
+
+        if isNumberStep {
+            emitOddEighthNumberContent(
+                step: step,
+                beatStart: beatStart,
+                quarterLen: quarterLen,
+                hasFollowingEighth: hasFollowingEighth
+            )
+            if hasFollowingEighth {
+                nextEventTime = beatStart + quarterLen
+                oddCurrentStep = (step + 2) % config.oddNumerator
+                oddVoiceCounter += 2
             } else {
-                trigger(.woodWeak, at: nextEventTime, volume: config.oddVol * 0.8)
+                nextEventTime = beatStart + stepInterval
+                oddCurrentStep = (step + 1) % config.oddNumerator
+                oddVoiceCounter += 1
+            }
+            return
+        }
+
+        nextEventTime = beatStart + stepInterval
+        oddCurrentStep = (step + 1) % config.oddNumerator
+        oddVoiceCounter += 1
+    }
+
+    private func emitOddEighthNumberContent(
+        step: Int,
+        beatStart: TimeInterval,
+        quarterLen: Double,
+        hasFollowingEighth: Bool
+    ) {
+        let isAccent = (config.oddPatterns[safe: step] ?? 0) != 0
+        let isVoice = config.soundType == .voice
+        let master = max(0.01, config.oddVol)
+        let accentVol = config.accentVol * master
+        let quarterVol = config.quarterVol * master
+        let eighthVol = config.eighthVol * master
+        let sixteenthVol = config.sixteenthVol * master
+        let tripletVol = config.tripletVol * master
+
+        if (step == 0 || isAccent) && accentVol > 0.01 {
+            trigger(.woodAccent, at: beatStart, volume: accentVol * 1.2)
+        }
+
+        if quarterVol > 0.01 {
+            if isVoice {
+                let n = step / 2 + 1
+                if let key = SampleKey.voice(n) {
+                    trigger(key, at: beatStart, volume: quarterVol * 1.5)
+                }
+                trigger(.woodWeak, at: beatStart, volume: quarterVol * 0.7)
+            } else if step == 0 {
+                playTargetSoundOdd(type: config.soundType, time: beatStart, beatIndex: 0, vol: quarterVol)
+            } else if isAccent {
+                playTargetSoundOdd(type: config.soundType, time: beatStart, beatIndex: step, vol: quarterVol * 1.1)
+            } else {
+                trigger(.woodWeak, at: beatStart, volume: quarterVol * 0.85)
             }
         }
+
+        guard hasFollowingEighth else { return }
+
+        if eighthVol > 0.01 {
+            let enTime = beatStart + getSwingSubbeatOffset(beatLen: quarterLen, gridPos: 0.5)
+            flashOdd(step + 1, at: enTime)
+            if isVoice {
+                triggerVoiceKey(time: enTime, key: .voiceAnd, vol: eighthVol * 1.5)
+                trigger(.woodWeak, at: enTime, volume: eighthVol * 0.5)
+            } else {
+                trigger(.woodWeak, at: enTime, volume: eighthVol)
+            }
+        } else {
+            let enTime = beatStart + getSwingSubbeatOffset(beatLen: quarterLen, gridPos: 0.5)
+            flashOdd(step + 1, at: enTime)
+        }
+
+        if sixteenthVol > 0.01 {
+            let t1 = beatStart + getSwingSubbeatOffset(beatLen: quarterLen, gridPos: 0.25)
+            let t2 = beatStart + getSwingSubbeatOffset(beatLen: quarterLen, gridPos: 0.75)
+            if isVoice {
+                triggerVoiceKey(time: t1, key: .voiceE, vol: sixteenthVol * 0.9)
+                triggerVoiceKey(time: t2, key: .voiceDa, vol: sixteenthVol * 0.9)
+                trigger(.woodWeak, at: t1, volume: sixteenthVol * 0.4)
+                trigger(.woodWeak, at: t2, volume: sixteenthVol * 0.4)
+            } else {
+                trigger(.woodWeak, at: t1, volume: sixteenthVol * 0.8)
+                trigger(.woodWeak, at: t2, volume: sixteenthVol * 0.8)
+            }
+        }
+
+        if tripletVol > 0.01 {
+            let t1 = beatStart + quarterLen * (1.0 / 3.0)
+            let t2 = beatStart + quarterLen * (2.0 / 3.0)
+            if isVoice {
+                triggerVoiceKey(time: t1, key: .voiceE, vol: tripletVol * 0.9)
+                triggerVoiceKey(time: t2, key: .voiceDa, vol: tripletVol * 0.9)
+                trigger(.woodWeak, at: t1, volume: tripletVol * 0.4)
+                trigger(.woodWeak, at: t2, volume: tripletVol * 0.4)
+            } else {
+                trigger(.woodWeak, at: t1, volume: tripletVol * 0.8)
+                trigger(.woodWeak, at: t2, volume: tripletVol * 0.8)
+            }
+        }
+    }
+
+    /// 5/4 など（1ステップ＝1拍）。音は最後まで再生し、次の「1」で前を切る。
+    private func scheduleOddSimpleStep(stepInterval: Double) {
+        let step = oddCurrentStep
+        let beatStart = nextEventTime
+
+        if step == 0 {
+            oddVoiceCounter = 0
+            flashOdd(0, at: beatStart)
+            cutPreviousBarAtOne(at: beatStart)
+            emitOddSimpleBeatContent(step: 0, beatStart: beatStart, stepInterval: stepInterval, voiceCounter: 0)
+            nextEventTime += stepInterval
+            oddCurrentStep = (oddCurrentStep + 1) % config.oddNumerator
+            oddVoiceCounter = 1
+            return
+        }
+
+        let isAccent = (config.oddPatterns[safe: step] ?? 0) != 0
+        if isAccent { oddVoiceCounter = 0 }
+        flashOdd(step, at: beatStart)
+        emitOddSimpleBeatContent(step: step, beatStart: beatStart, stepInterval: stepInterval, voiceCounter: oddVoiceCounter)
 
         nextEventTime += stepInterval
         oddCurrentStep = (oddCurrentStep + 1) % config.oddNumerator
         oddVoiceCounter += 1
+    }
+
+    private func emitOddSimpleBeatContent(step: Int, beatStart: TimeInterval, stepInterval: Double, voiceCounter: Int) {
+        let isAccent = (config.oddPatterns[safe: step] ?? 0) != 0
+        let isVoice = config.soundType == .voice
+        let master = max(0.01, config.oddVol)
+        let accentVol = config.accentVol * master
+        let quarterVol = config.quarterVol * master
+        let eighthVol = config.eighthVol * master
+        let sixteenthVol = config.sixteenthVol * master
+        let tripletVol = config.tripletVol * master
+
+        if (step == 0 || isAccent) && accentVol > 0.01 {
+            trigger(.woodAccent, at: beatStart, volume: accentVol * 1.2)
+        }
+
+        if quarterVol > 0.01 {
+            if isVoice {
+                if voiceCounter < config.oddNumerator,
+                   let key = SampleKey.voice(voiceCounter + 1) {
+                    trigger(key, at: beatStart, volume: quarterVol * 1.5)
+                }
+                trigger(.woodWeak, at: beatStart, volume: quarterVol * 0.7)
+            } else if step == 0 {
+                playTargetSoundOdd(type: config.soundType, time: beatStart, beatIndex: 0, vol: quarterVol)
+            } else if isAccent {
+                playTargetSoundOdd(type: config.soundType, time: beatStart, beatIndex: step, vol: quarterVol * 1.1)
+            } else {
+                trigger(.woodWeak, at: beatStart, volume: quarterVol * 0.85)
+            }
+        }
+
+        if eighthVol > 0.01 {
+            let eighthTime = beatStart + getSwingSubbeatOffset(beatLen: stepInterval, gridPos: 0.5)
+            if isVoice {
+                triggerVoiceKey(time: eighthTime, key: .voiceAnd, vol: eighthVol)
+                trigger(.woodWeak, at: eighthTime, volume: eighthVol * 0.5)
+            } else {
+                trigger(.woodWeak, at: eighthTime, volume: eighthVol)
+            }
+        }
+
+        if sixteenthVol > 0.01 {
+            let t1 = beatStart + getSwingSubbeatOffset(beatLen: stepInterval, gridPos: 0.25)
+            let t2 = beatStart + getSwingSubbeatOffset(beatLen: stepInterval, gridPos: 0.75)
+            if isVoice {
+                triggerVoiceKey(time: t1, key: .voiceE, vol: sixteenthVol * 0.9)
+                triggerVoiceKey(time: t2, key: .voiceDa, vol: sixteenthVol * 0.9)
+                trigger(.woodWeak, at: t1, volume: sixteenthVol * 0.4)
+                trigger(.woodWeak, at: t2, volume: sixteenthVol * 0.4)
+            } else {
+                trigger(.woodWeak, at: t1, volume: sixteenthVol * 0.8)
+                trigger(.woodWeak, at: t2, volume: sixteenthVol * 0.8)
+            }
+        }
+
+        if tripletVol > 0.01 {
+            let t1 = beatStart + stepInterval * (1.0 / 3.0)
+            let t2 = beatStart + stepInterval * (2.0 / 3.0)
+            if isVoice {
+                triggerVoiceKey(time: t1, key: .voiceE, vol: tripletVol * 0.9)
+                triggerVoiceKey(time: t2, key: .voiceDa, vol: tripletVol * 0.9)
+                trigger(.woodWeak, at: t1, volume: tripletVol * 0.4)
+                trigger(.woodWeak, at: t2, volume: tripletVol * 0.4)
+            } else {
+                trigger(.woodWeak, at: t1, volume: tripletVol * 0.8)
+                trigger(.woodWeak, at: t2, volume: tripletVol * 0.8)
+            }
+        }
+    }
+
+    private func playTargetSoundOdd(type: SoundType, time: TimeInterval, beatIndex: Int, vol: Double) {
+        switch type {
+        case .voice:
+            let voiceNum = max(1, min(15, (beatIndex % max(1, config.oddNumerator)) + 1))
+            if let key = SampleKey.voice(voiceNum) {
+                trigger(key, at: time, volume: vol * 1.5)
+            }
+        case .woodblock:
+            let key: SampleKey = beatIndex == 0 ? .woodAccent : .woodStrong
+            trigger(key, at: time, volume: vol)
+        case .click:
+            let key: SampleKey = beatIndex == 0 ? .clickAccent : .clickStrong
+            trigger(key, at: time, volume: vol)
+        }
     }
 
     private func scheduleModulation(beatInterval: Double) {
